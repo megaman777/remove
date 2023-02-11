@@ -1,5 +1,5 @@
 #!/bin/bash
-# Scan a single URL
+
 Urlfunc() {
     echo -e "Scanning" $victim "..."
     mkdir $HOME/targets/$victim && mkdir $HOME/targets/$victim/subdomains && mkdir $HOME/targets/$victim/parameters
@@ -8,21 +8,18 @@ Urlfunc() {
     echo -e "Done!, Now you can find results at $HOME/targets/"$victim"/subdomains/"$victim"-result"
 }
 
-# Scan list file
-Urlfunc() {
+Filefunc() {
     echo -e "Scanning targets"
     echo "Finding Subdomains ..."
     subfinder -pc $HOME/tools/subfinder-config.yaml -dL $victim -silent | httpx -silent >> $HOME/targets/mix/subdomains/sublist
     echo "Done!, Now you can find results at $HOME/targets/mix/subdomains/sublist"
 }
 
-# Nuclei for a single 
-URLUrlnuc() {
+Urlnuc() {
     echo -e "Scanning with Nuclei ..."
     nuclei --target $HOME/targets/$victim/subdomains/$victim-result -es info -o $HOME/targets/$victim/nuclei-result
 }
 
-# Nuclei for a single 
 Filenuc() {
     nuclei --list $HOME/targets/mix/subdomains/sub-list -es info -o $HOME/targets/mix/nuclei-result
 }
@@ -45,29 +42,28 @@ Filexss() {
     cat $HOME/targets/mix/parameters/mix-parameters | kxss >> $HOME/targets/mix/xss-result
 }
 
-while getopts ":ulh:" option; do
-    case $option in
+usage() { echo "Usage: $0 sub -u target.com | sub -l list" 1>&2; exit 1; }
+
+while getopts "hl:u::" o; do
+    case "${o}" in
         u) # display Help
             victim=$2
-            Urlfunc
-            wait
-            Urlnuc
-            wait
-            Urlxss
-            wait
+            Urlfunc && Urlnuc && Urlxss
             echo "Done!"
-            exit;;
+            ;;
         l) # using list
             victim=$2
-            Filefunc
-            wait
-            Filenuc
-            wait
-            Filexss
-            wait
+            Filefunc && Filenuc && Filexss
             echo "Done!, Remember to delete files results before starting a new scan"
-            exit;;
-        h) # help
-            echo "Usage: sub -u target.com | sub -l list"
+            ;;
+        *) # help
+            usage
+            exit 0
+            ;;
     esac
 done
+shift $((OPTIND-1))
+
+if [ -z "${u}" ] || [ -z "${l}" ]; then
+    usage
+fi
